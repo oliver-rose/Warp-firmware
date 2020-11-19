@@ -14,6 +14,14 @@ extern volatile uint32_t		gWarpI2cBaudRateKbps;
 extern volatile uint32_t		gWarpI2cTimeoutMilliseconds;
 
 
+void
+initINA219(const uint8_t i2cAddress, WarpI2CDeviceState volatile *  deviceStatePointer)
+{
+	deviceStatePointer->i2cAddress	= i2cAddress;
+	return;
+}
+
+
 WarpStatus
 readSensorRegisterINA219(uint8_t deviceRegister, int numberOfBytes)
 {
