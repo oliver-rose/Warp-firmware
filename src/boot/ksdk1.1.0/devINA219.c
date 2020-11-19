@@ -96,3 +96,15 @@ readSensorRegisterINA219(uint8_t deviceRegister, int numberOfBytes)
 
 	return kWarpStatusOK;
 }
+
+
+/* Read a current value from the INA219 (including conversion) */
+uint16_t
+readCurrentINA219()
+{
+	readSensorRegisterINA219(0x04, 2);
+	return (
+		(((uint32_t) deviceINA219State.i2cBuffer[0]) << 8)
+		 + deviceINA219State.i2cBuffer[1]
+		) / 100;
+}
