@@ -86,6 +86,7 @@
 //#include "devRV8803C7.h"
 //#include "devISL23415.h"
 #else
+#	include "devSSD1331.h"
 #	include "devMMA8451Q.h"
 #endif
 
@@ -1358,6 +1359,10 @@ main(void)
 	 *	Notreached
 	 */
 #endif
+
+	// Init the SSD1331 display
+	devSSD1331init();
+	SEGGER_RTT_WriteString(0, "Back in main loop");
 
 	while (1)
 	{
