@@ -122,6 +122,8 @@ volatile WarpI2CDeviceState			deviceBMX055magState;
 volatile WarpI2CDeviceState			deviceMMA8451QState;
 #endif
 
+volatile WarpI2CDeviceState			deviceINA219State;
+
 #ifdef WARP_BUILD_ENABLE_DEVLPS25H
 volatile WarpI2CDeviceState			deviceLPS25HState;
 #endif
@@ -1253,6 +1255,9 @@ main(void)
 	initMMA8451Q(	0x1D	/* i2cAddress */,	&deviceMMA8451QState	);
 #endif
 
+initINA219(	0x40	/* i2cAddress */,	&deviceINA219State	);
+
+
 #ifdef WARP_BUILD_ENABLE_DEVLPS25H
 	initLPS25H(	0x5C	/* i2cAddress */,	&deviceLPS25HState	);
 #endif
@@ -1475,6 +1480,61 @@ main(void)
 		
 		switch (key)
 		{
+			// New case for reading from INA219
+			case '0':
+			{
+				SEGGER_RTT_WriteString(0, "\n\tReading from INA219\n");
+				OSA_TimeDelay(gWarpMenuPrintDelayMilliseconds);
+
+				enableI2Cpins(menuI2cPullupValue);
+				uint8_t calibration[2] = {16, 0};
+				writeCalibrationINA219(calibration);
+
+				SEGGER_RTT_WriteString(0, "\r\tRegister [0]-5> ");
+				OSA_TimeDelay(gWarpMenuPrintDelayMilliseconds);
+
+				uint8_t reg = 0;
+				key = SEGGER_RTT_WaitKey();
+				switch(key)
+				{
+					case '1': {
+						reg = 1;
+						break;
+					}
+					case '2': {
+						reg = 2;
+						break;
+					}
+					case '3': {
+						reg = 3;
+						break;
+					}
+					case '4': {
+						reg = 4;
+						break;
+					}
+					case '5': {
+						reg = 5;
+						break;
+					}
+					default: {
+						// default is to keep 0
+						break;
+					}
+				}
+
+				WarpStatus i2cReadStatus = readSensorRegisterINA219(reg, 2);
+				if(i2cReadStatus == kWarpStatusOK)
+				{
+					SEGGER_RTT_printf(0, "\t\t\nReading from INA219 (reg %d): %d %d\n",
+						reg, deviceINA219State.i2cBuffer[0], deviceINA219State.i2cBuffer[1]);
+				}
+				else
+				{
+					SEGGER_RTT_WriteString(0, "\t\t\nReading from INA219 failed\n");
+				}
+				break;
+			}
 			/*
 			 *		Select sensor
 			 */

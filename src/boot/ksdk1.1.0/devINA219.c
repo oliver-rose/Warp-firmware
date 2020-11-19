@@ -23,6 +23,36 @@ initINA219(const uint8_t i2cAddress, WarpI2CDeviceState volatile *  deviceStateP
 
 
 WarpStatus
+writeCalibrationINA219(uint8_t calibration[])
+{
+	uint8_t commandByte[1];
+	i2c_status_t status;
+
+	i2c_device_t slave =
+	{
+		.address = deviceINA219State.i2cAddress,
+		.baudRate_kbps = gWarpI2cBaudRateKbps
+	};
+
+	commandByte[0] = 0x05;	// Calibration register
+	status = I2C_DRV_MasterSendDataBlocking(
+		0,
+		&slave,
+		commandByte,
+		1,
+		calibration,
+		2,
+		gWarpI2cTimeoutMilliseconds);
+	if (status != kStatus_I2C_Success)
+	{
+		return kWarpStatusDeviceCommunicationFailed;
+	}
+
+	return kWarpStatusOK;
+}
+
+
+WarpStatus
 readSensorRegisterINA219(uint8_t deviceRegister, int numberOfBytes)
 {
 	uint8_t cmdBuf[1] = {0xFF};
@@ -50,7 +80,7 @@ readSensorRegisterINA219(uint8_t deviceRegister, int numberOfBytes)
 	cmdBuf[0] = deviceRegister;
 
 	status = I2C_DRV_MasterReceiveDataBlocking(
-		0 /* I2C peripheral instance */,
+		0,
 		&slave,
 		cmdBuf,
 		1,
