@@ -1,5 +1,11 @@
 /* Driver for INA219 with Warp firmware. */
 
+#include <stdlib.h>
+
+#include "fsl_device_registers.h"
+#include "fsl_i2c_master_driver.h"
+#include "fsl_spi_master_driver.h"
+
 #include "warp.h"
 
 
