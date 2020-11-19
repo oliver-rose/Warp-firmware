@@ -56,7 +56,7 @@
 #include "warp.h"
 
 
-//#define WARP_FRDMKL03
+#define WARP_FRDMKL03
 
 
 /*
@@ -83,6 +83,7 @@
 //#include "devRV8803C7.h"
 //#include "devISL23415.h"
 #else
+#	include "devSSD1331.h"
 #	include "devMMA8451Q.h"
 #endif
 
@@ -1248,7 +1249,7 @@ main(void)
 #endif
 
 #ifdef WARP_BUILD_ENABLE_DEVMMA8451Q
-	initMMA8451Q(	0x1C	/* i2cAddress */,	&deviceMMA8451QState	);
+	initMMA8451Q(	0x1D	/* i2cAddress */,	&deviceMMA8451QState	);
 #endif
 
 #ifdef WARP_BUILD_ENABLE_DEVLPS25H
@@ -1353,6 +1354,10 @@ main(void)
 	 *	Notreached
 	 */
 #endif
+
+	// Init the SSD1331 display
+	devSSD1331init();
+	SEGGER_RTT_WriteString(0, "Back in main loop");
 
 	while (1)
 	{
