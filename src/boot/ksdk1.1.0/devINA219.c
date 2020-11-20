@@ -98,13 +98,12 @@ readSensorRegisterINA219(uint8_t deviceRegister, int numberOfBytes)
 }
 
 
-/* Read a current value from the INA219 (including conversion) */
+/* Read a raw current value from the INA219 */
 uint16_t
-readCurrentINA219()
+readRawCurrentINA219()
 {
 	readSensorRegisterINA219(0x04, 2);
-	return (
-		(((uint32_t) deviceINA219State.i2cBuffer[0]) << 8)
-		 + deviceINA219State.i2cBuffer[1]
-		) / 100;
+	uint16_t current0 = ((uint16_t)deviceINA219State.i2cBuffer[0]) << 8;
+	uint16_t current_raw = current0 + deviceINA219State.i2cBuffer[1];
+	return current_raw;
 }

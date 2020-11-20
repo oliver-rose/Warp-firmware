@@ -1490,62 +1490,79 @@ initINA219(	0x40	/* i2cAddress */,	&deviceINA219State	);
 				uint8_t calibration[2] = {160, 0};
 				writeCalibrationINA219(calibration);
 
-				SEGGER_RTT_WriteString(0, "\r\tRead current? (or register) [y]/n> ");
+				SEGGER_RTT_WriteString(0, "\r\tRead register (a), current (b), 1000 current readings (c)> ");
 				OSA_TimeDelay(gWarpMenuPrintDelayMilliseconds);
 
 				key = SEGGER_RTT_WaitKey();
-				if (key == 'n')
+				switch (key)
 				{
-					// Read from register
-					SEGGER_RTT_WriteString(0, "\r\tRegister [0]-5> ");
-					OSA_TimeDelay(gWarpMenuPrintDelayMilliseconds);
+					case 'a':
+					{
+						// Read from register
+						SEGGER_RTT_WriteString(0, "\r\tRegister [0]-5> ");
+						OSA_TimeDelay(gWarpMenuPrintDelayMilliseconds);
 
-					uint8_t reg = 0;
-					key = SEGGER_RTT_WaitKey();
-					switch(key)
-					{
-						case '1': {
-							reg = 1;
-							break;
+						uint8_t reg = 0;
+						key = SEGGER_RTT_WaitKey();
+						switch(key)
+						{
+							case '1': {
+								reg = 1;
+								break;
+							}
+							case '2': {
+								reg = 2;
+								break;
+							}
+							case '3': {
+								reg = 3;
+								break;
+							}
+							case '4': {
+								reg = 4;
+								break;
+							}
+							case '5': {
+								reg = 5;
+								break;
+							}
+							default: {
+								// default is to keep 0
+								break;
+							}
 						}
-						case '2': {
-							reg = 2;
-							break;
-						}
-						case '3': {
-							reg = 3;
-							break;
-						}
-						case '4': {
-							reg = 4;
-							break;
-						}
-						case '5': {
-							reg = 5;
-							break;
-						}
-						default: {
-							// default is to keep 0
-							break;
-						}
-					}
 
-					WarpStatus i2cReadStatus = readSensorRegisterINA219(reg, 2);
-					if(i2cReadStatus == kWarpStatusOK)
-					{
-						SEGGER_RTT_printf(0, "\t\t\nReading from INA219 (reg %d): %d %d\n",
-							reg, deviceINA219State.i2cBuffer[0], deviceINA219State.i2cBuffer[1]);
+						WarpStatus i2cReadStatus = readSensorRegisterINA219(reg, 2);
+						if(i2cReadStatus == kWarpStatusOK)
+						{
+							SEGGER_RTT_printf(0, "\t\t\nReading from INA219 (reg %d): %d %d\n",
+								reg, deviceINA219State.i2cBuffer[0], deviceINA219State.i2cBuffer[1]);
+						}
+						else
+						{
+							SEGGER_RTT_WriteString(0, "\t\t\nReading from INA219 failed\n");
+						}
+						break;
 					}
-					else
+					case 'b':
 					{
-						SEGGER_RTT_WriteString(0, "\t\t\nReading from INA219 failed\n");
+						// Read current
+						uint16_t current = readRawCurrentINA219();
+						// Convert to uA
+						SEGGER_RTT_printf(0, "\t\t\nCurrent (uA): %d", current * 10);
+						break;
 					}
-				}
-				else
-				{
-					// Read current
-					uint16_t current = readCurrentINA219();
-					SEGGER_RTT_printf(0, "\t\t\nCurrent: %d", current);
+					case 'c':
+					{
+						SEGGER_RTT_WriteString(0, "\n\n\nCurrent (uA)\n");
+						for(int i = 0; i < 1000; i++) {
+							uint16_t current = readRawCurrentINA219();
+							// Convert to uA
+							SEGGER_RTT_printf(0, "%d\n", current * 10);
+							OSA_TimeDelay(10);
+						}
+						break;
+					}
 				}
 				break;
 			}
