@@ -1348,7 +1348,8 @@ main(void)
 	warpSetLowPowerMode(kWarpPowerModeRUN, 0 /* sleep seconds : irrelevant here */);
 	enableSssupply(3000);
 	enableI2Cpins(menuI2cPullupValue);
-	printAllSensors(false /* printHeadersAndCalibration */, true /* hexModeFlag */, 0 /* menuDelayBetweenEachRun */, menuI2cPullupValue);
+	printAllSensors(true /* printHeadersAndCalibration */, false /* hexModeFlag */, 100 /* menuDelayBetweenEachRun */, menuI2cPullupValue);
+	// printAllSensors(false /* printHeadersAndCalibration */, true /* hexModeFlag */, 0 /* menuDelayBetweenEachRun */, menuI2cPullupValue);
 	/*
 	 *	Notreached
 	 */
