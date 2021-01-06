@@ -50,6 +50,8 @@
 #include "SEGGER_RTT.h"
 #include "warp.h"
 
+#include "devMMA8451Q.h"
+
 
 extern volatile WarpI2CDeviceState	deviceMMA8451QState;
 extern volatile uint32_t		gWarpI2cBaudRateKbps;
@@ -135,6 +137,32 @@ configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint16
 							menuI2cPullupValue);
 
 	return (i2cWriteStatus1 | i2cWriteStatus2);
+}
+
+WarpStatus
+configureMotionDetectMMA8451Q(uint16_t menuI2cPullupValue)
+{
+	WarpStatus	i2cStatus;
+
+	/* Disable FIFO */
+	i2cStatus = writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_F_SETUP, 0x00, menuI2cPullupValue);
+	/* Put the device in standby for configuration */
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_CTRL_REG1, 0x00, menuI2cPullupValue);
+
+	/* Configure the motion detection, threshold and debounce */
+	// TODO
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_CFG, 0xB8, menuI2cPullupValue);
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_THS, 0x03, menuI2cPullupValue);
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_COUNT, 0x06, menuI2cPullupValue);
+
+	/* Enable the motion detection and route to INT2 pin */
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_CTRL_REG4, 0x04, menuI2cPullupValue);
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_CTRL_REG5, 0x00, menuI2cPullupValue);
+
+	/* Put the device in active mode */
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_CTRL_REG1, 0x01, menuI2cPullupValue);
+
+	return i2cStatus;
 }
 
 WarpStatus
