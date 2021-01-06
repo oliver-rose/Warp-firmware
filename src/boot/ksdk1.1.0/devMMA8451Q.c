@@ -225,7 +225,7 @@ readSensorRegisterMMA8451Q(uint8_t deviceRegister, int numberOfBytes)
 }
 
 void
-printSensorDataMMA8451Q(bool hexModeFlag)
+printSensorDataMMA8451Q(bool hexModeFlag, bool motionDetection)
 {
 	uint16_t	readSensorRegisterValueLSB;
 	uint16_t	readSensorRegisterValueMSB;
@@ -325,6 +325,21 @@ printSensorDataMMA8451Q(bool hexModeFlag)
 		else
 		{
 			SEGGER_RTT_printf(0, " %d,", readSensorRegisterValueCombined);
+		}
+	}
+
+	if (motionDetection)
+	{
+		/* Read the motion detection register */
+		i2cReadStatus = readSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_SRC, 1);
+		/* Motion detected if bit 7 is set */
+		if (deviceMMA8451QState.i2cBuffer[0] > 0x7F)
+		{
+			SEGGER_RTT_printf(0, " 1,");
+		}
+		else
+		{
+			SEGGER_RTT_printf(0, " 0,");
 		}
 	}
 }
