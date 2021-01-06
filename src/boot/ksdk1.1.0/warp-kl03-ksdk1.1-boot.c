@@ -89,7 +89,7 @@
 
 #define WARP_BUILD_ENABLE_SEGGER_RTT_PRINTF
 #define WARP_BUILD_BOOT_TO_CSVSTREAM
-
+#define WARP_BUILD_ENABLE_MMA8451Q_MOTION
 
 /*
 *	BTstack includes WIP
@@ -2524,17 +2524,17 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 					);
 	#endif
 	#ifdef WARP_BUILD_ENABLE_DEVMMA8451Q
-	#ifdef ENABLE_MMA8451Q_MT
+	#ifdef WARP_BUILD_ENABLE_MMA8451Q_MOTION
 	/* Motion detection enabled */
-	numberOfConfigErrors += configureMotionDetectMMA8451Q(i2cPullupValue);
+	numberOfConfigErrors += configureSensorMMA8451Qmotion(i2cPullupValue);
 	#else
 	/* Standard MMA8451Q config */
 	numberOfConfigErrors += configureSensorMMA8451Q(0x00,/* Payload: Disable FIFO */
 					0x01,/* Normal read 8bit, 800Hz, normal, active mode */
 					i2cPullupValue
 					);
-	#endif
-	#endif
+	#endif	/* WARP_BUILD_ENABLE_MMA8451Q_MOTION */
+	#endif	/* WARP_BUILD_ENABLE_DEVMMA8451Q */
 	#ifdef WARP_BUILD_ENABLE_DEVMAG3110
 	numberOfConfigErrors += configureSensorMAG3110(	0x00,/*	Payload: DR 000, OS 00, 80Hz, ADC 1280, Full 16bit, standby mode to set up register*/
 					0xA0,/*	Payload: AUTO_MRST_EN enable, RAW value without offset */
@@ -2630,7 +2630,7 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 		SEGGER_RTT_WriteString(0, " MMA8451 x, MMA8451 y, MMA8451 z,");
 		OSA_TimeDelay(gWarpMenuPrintDelayMilliseconds);
 		#endif
-		#ifdef ENABLE_MMA8451Q_MT
+		#ifdef WARP_BUILD_ENABLE_MMA8451Q_MOTION
 		SEGGER_RTT_WriteString(0, " MMA8451 m,");
 		OSA_TimeDelay(gWarpMenuPrintDelayMilliseconds);
 		#endif
@@ -2679,13 +2679,13 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 		printSensorDataAMG8834(hexModeFlag);
 		#endif
 		#ifdef WARP_BUILD_ENABLE_DEVMMA8451Q
-		#ifdef ENABLE_MMA8451Q_MOTION
+		#ifdef WARP_BUILD_ENABLE_MMA8451Q_MOTION
 		/* Enable with motion detect */
-		printSensorDataMMA8451Qmotion(hexModeFlag, true);
+		printSensorDataMMA8451Q(hexModeFlag, true);
 		#else
 		/* Enable without */
 		printSensorDataMMA8451Q(hexModeFlag, false);
-		#endif	/* ENABLE_MMA8451Q_MOTION */
+		#endif	/* WARP_BUILD_ENABLE_MMA8451Q_MOTION */
 		#endif	/* WARP_BUILD_ENABLE_DEVMMA8451Q */
 		#ifdef WARP_BUILD_ENABLE_DEVMAG3110
 		printSensorDataMAG3110(hexModeFlag);

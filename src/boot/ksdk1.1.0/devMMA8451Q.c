@@ -140,7 +140,7 @@ configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint16
 }
 
 WarpStatus
-configureMotionDetectMMA8451Q(uint16_t menuI2cPullupValue)
+configureSensorMMA8451Qmotion(uint16_t menuI2cPullupValue)
 {
 	WarpStatus	i2cStatus;
 
