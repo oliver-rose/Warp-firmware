@@ -151,15 +151,15 @@ configureSensorMMA8451Qmotion(uint16_t menuI2cPullupValue)
 
 	/* Configure the motion detection, threshold and debounce */
 	// TODO
-	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_CFG, 0xB8, menuI2cPullupValue);
-	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_THS, 0x03, menuI2cPullupValue);
-	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_COUNT, 0x06, menuI2cPullupValue);
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_CFG, 0xD8, menuI2cPullupValue);
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_THS, 0x30, menuI2cPullupValue);
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_COUNT, 0x0A, menuI2cPullupValue);
 
 	/* Enable the motion detection and route to INT2 pin */
 	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_CTRL_REG4, 0x04, menuI2cPullupValue);
 	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_CTRL_REG5, 0x00, menuI2cPullupValue);
 
-	/* Put the device in active mode */
+	/* Normal read 8bit, 800Hz, normal, active */
 	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_CTRL_REG1, 0x01, menuI2cPullupValue);
 
 	return i2cStatus;
