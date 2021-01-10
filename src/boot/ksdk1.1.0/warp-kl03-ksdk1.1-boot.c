@@ -88,7 +88,7 @@
 
 
 #define WARP_BUILD_ENABLE_SEGGER_RTT_PRINTF
-#define WARP_BUILD_BOOT_TO_CSVSTREAM
+// #define WARP_BUILD_BOOT_TO_CSVSTREAM
 #define WARP_BUILD_ENABLE_MMA8451Q_MOTION
 
 /*
@@ -1470,6 +1470,15 @@ main(void)
 		
 		switch (key)
 		{
+			/*
+			 *		Run motion detection
+			 */
+			case '1':
+			{
+				SEGGER_RTT_WriteString(0, "\r\tRunning motion detection:\n\n");
+				runActivityTracker(menuI2cPullupValue);		/* Never returns */
+				break;
+			}
 			/*
 			 *		Select sensor
 			 */
@@ -3690,4 +3699,20 @@ activateAllLowPowerSensorModes(bool verbose)
 	GPIO_DRV_ClearPinOutput(kWarpPinPAN1326_nSHUTD);
 #endif
 #endif
+}
+
+
+void
+runActivityTracker(int i2cPullupValue)
+{
+	configureSensorMMA8451Qmotion(i2cPullupValue);
+	/* Run the activity tracking functionality */
+	while (1)
+	{
+		if (readMotionMMA8451Q())
+		{
+			SEGGER_RTT_WriteString(0, "\r\nMotion detected");
+		}
+		OSA_TimeDelay(100);
+	}
 }

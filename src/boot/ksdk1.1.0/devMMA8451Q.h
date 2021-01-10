@@ -37,6 +37,7 @@
 
 #ifndef WARP_BUILD_ENABLE_DEVMMA8451Q
 #define WARP_BUILD_ENABLE_DEVMMA8451Q
+#endif
 
 typedef enum
 {
@@ -139,5 +140,3 @@ WarpSensorDataMMA8451Q	readSensorDataMMA8451Q(void);
 int16_t			readSingleAccMMA8451Q(WarpSensorOutputRegister reg);
 bool			readMotionMMA8451Q(void);
 void			printSensorDataMMA8451Q(bool hexModeFlag, bool motionDetection);
-
-#endif

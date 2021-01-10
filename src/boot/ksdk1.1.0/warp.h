@@ -346,3 +346,5 @@ void		enableI2Cpins(uint8_t pullupValue);
 void		disableI2Cpins(void);
 void		enableSPIpins(void);
 void		disableSPIpins(void);
+
+void runActivityTracker(int i2cPullupValue);
