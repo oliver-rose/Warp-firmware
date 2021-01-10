@@ -224,6 +224,44 @@ readSensorRegisterMMA8451Q(uint8_t deviceRegister, int numberOfBytes)
 	return kWarpStatusOK;
 }
 
+WarpSensorDataMMA8451Q
+readSensorDataMMA8451Q(void)
+{
+	return (WarpSensorDataMMA8451Q)	{
+		.x_acc = readSingleAccMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_X_MSB),
+		.y_acc = readSingleAccMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_Y_MSB),
+		.z_acc = readSingleAccMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_Z_MSB),
+		.motion = readMotionMMA8451Q(),
+	};
+}
+
+int16_t
+readSingleAccMMA8451Q(WarpSensorOutputRegister reg)
+{
+	/* Read and convert a single acceleration */
+	uint16_t	readSensorRegisterValueLSB;
+	uint16_t	readSensorRegisterValueMSB;
+	int16_t		readSensorRegisterValueCombined;
+
+	readSensorRegisterMMA8451Q(reg, 2 /* numberOfBytes */);
+	readSensorRegisterValueMSB = deviceMMA8451QState.i2cBuffer[0];
+	readSensorRegisterValueLSB = deviceMMA8451QState.i2cBuffer[1];
+	readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 6) | (readSensorRegisterValueLSB >> 2);
+
+	/* Sign extend the 14-bit value based on knowledge that upper 2 bit are 0: */
+	readSensorRegisterValueCombined = (readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13);
+	return readSensorRegisterValueCombined;
+}
+
+bool
+readMotionMMA8451Q(void)
+{
+	/* Read the motion detection flag */
+	readSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_SRC, 1);
+	/* Motion detected if bit 7 is set */
+	return (deviceMMA8451QState.i2cBuffer[0] > 0x7F);
+}
+
 void
 printSensorDataMMA8451Q(bool hexModeFlag, bool motionDetection)
 {

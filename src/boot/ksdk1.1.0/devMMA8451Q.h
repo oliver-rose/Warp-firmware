@@ -38,20 +38,6 @@
 #ifndef WARP_BUILD_ENABLE_DEVMMA8451Q
 #define WARP_BUILD_ENABLE_DEVMMA8451Q
 
-void		initMMA8451Q(const uint8_t i2cAddress, WarpI2CDeviceState volatile *  deviceStatePointer);
-WarpStatus	readSensorRegisterMMA8451Q(uint8_t deviceRegister, int numberOfBytes);
-WarpStatus	writeSensorRegisterMMA8451Q(uint8_t deviceRegister,
-					uint8_t payloadBtye,
-					uint16_t menuI2cPullupValue);
-WarpStatus	configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint16_t menuI2cPullupValue);
-WarpStatus	configureSensorMMA8451Qmotion(uint16_t menuI2cPullupValue);
-WarpStatus	readSensorSignalMMA8451Q(WarpTypeMask signal,
-					WarpSignalPrecision precision,
-					WarpSignalAccuracy accuracy,
-					WarpSignalReliability reliability,
-					WarpSignalNoise noise);
-void		printSensorDataMMA8451Q(bool hexModeFlag, bool motionDetection);
-
 typedef enum
 {
 	/* Status */
@@ -125,5 +111,33 @@ typedef enum
 	kWarpSensorRegisterMMA8451Q_OFF_Y				= 0x30,
 	kWarpSensorRegisterMMA8451Q_OFF_Z				= 0x31,
 } WarpSensorRegisterMMA8451Q;
+
+
+typedef struct
+{
+	/* Converted accelerations */
+	int16_t			x_acc;
+	int16_t			y_acc;
+	int16_t			z_acc;
+	/* Motion detected flag */
+	bool			motion;
+} WarpSensorDataMMA8451Q;
+
+void			initMMA8451Q(const uint8_t i2cAddress, WarpI2CDeviceState volatile *  deviceStatePointer);
+WarpStatus		readSensorRegisterMMA8451Q(uint8_t deviceRegister, int numberOfBytes);
+WarpStatus		writeSensorRegisterMMA8451Q(uint8_t deviceRegister,
+						uint8_t payloadBtye,
+						uint16_t menuI2cPullupValue);
+WarpStatus		configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint16_t menuI2cPullupValue);
+WarpStatus		configureSensorMMA8451Qmotion(uint16_t menuI2cPullupValue);
+WarpStatus		readSensorSignalMMA8451Q(WarpTypeMask signal,
+						WarpSignalPrecision precision,
+						WarpSignalAccuracy accuracy,
+						WarpSignalReliability reliability,
+						WarpSignalNoise noise);
+WarpSensorDataMMA8451Q	readSensorDataMMA8451Q(void);
+int16_t			readSingleAccMMA8451Q(WarpSensorOutputRegister reg);
+bool			readMotionMMA8451Q(void);
+void			printSensorDataMMA8451Q(bool hexModeFlag, bool motionDetection);
 
 #endif
