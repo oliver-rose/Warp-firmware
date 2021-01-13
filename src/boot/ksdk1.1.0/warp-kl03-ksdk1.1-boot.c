@@ -90,6 +90,7 @@
 #define WARP_BUILD_ENABLE_SEGGER_RTT_PRINTF
 // #define WARP_BUILD_BOOT_TO_CSVSTREAM
 #define WARP_BUILD_ENABLE_MMA8451Q_MOTION
+#define WARP_BUILD_ENABLE_ACTIVITY_TRACKER
 
 /*
 *	BTstack includes WIP
@@ -1470,8 +1471,9 @@ main(void)
 		
 		switch (key)
 		{
+#ifdef WARP_BUILD_ENABLE_ACTIVITY_TRACKER
 			/*
-			 *		Run motion detection
+			 *		Run activity tracker
 			 */
 			case '1':
 			{
@@ -1479,6 +1481,7 @@ main(void)
 				runActivityTracker(menuI2cPullupValue);		/* Never returns */
 				break;
 			}
+#endif
 			/*
 			 *		Select sensor
 			 */
