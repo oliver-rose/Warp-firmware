@@ -1477,11 +1477,23 @@ main(void)
 			 */
 			case '1':
 			{
+				enableSssupply(3000);
+				enableI2Cpins(menuI2cPullupValue);
 				SEGGER_RTT_WriteString(0, "\r\tRunning motion detection:\n\n");
 				runActivityTracker(menuI2cPullupValue);		/* Never returns */
 				break;
 			}
 #endif
+			/* Temporary option for tuning threshold */
+			case '2':
+			{
+				enableSssupply(3000);
+				enableI2Cpins(menuI2cPullupValue);
+				SEGGER_RTT_WriteString(0, "\r\t Running tuning routine\n\n");
+				tuneThreshold(menuI2cPullupValue);		/* Never returns */
+				break;
+			}
+
 			/*
 			 *		Select sensor
 			 */
@@ -2538,7 +2550,7 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 	#ifdef WARP_BUILD_ENABLE_DEVMMA8451Q
 	#ifdef WARP_BUILD_ENABLE_MMA8451Q_MOTION
 	/* Motion detection enabled */
-	numberOfConfigErrors += configureSensorMMA8451Qmotion(i2cPullupValue);
+	numberOfConfigErrors += configureSensorMMA8451Qmotion(i2cPullupValue, 0x30  /* Threshold */);
 	#else
 	/* Standard MMA8451Q config */
 	numberOfConfigErrors += configureSensorMMA8451Q(0x00,/* Payload: Disable FIFO */
@@ -3708,7 +3720,7 @@ activateAllLowPowerSensorModes(bool verbose)
 void
 runActivityTracker(int i2cPullupValue)
 {
-	configureSensorMMA8451Qmotion(i2cPullupValue);
+	configureSensorMMA8451Qmotion(i2cPullupValue, 0x030  /* Threshold */);
 	/* Run the activity tracking functionality */
 	while (1)
 	{
@@ -3717,5 +3729,85 @@ runActivityTracker(int i2cPullupValue)
 			SEGGER_RTT_WriteString(0, "\r\nMotion detected");
 		}
 		OSA_TimeDelay(100);
+	}
+}
+
+void tuneThreshold(int i2cPullupValue)
+{
+	uint8_t currentThreshold = 0x30;
+
+	bool thresholdInc;
+	uint8_t thresholdStep;
+
+	uint8_t key;
+	bool validChange = true;
+
+	while (1)
+	{
+		configureSensorMMA8451Qmotion(i2cPullupValue, currentThreshold);
+		SEGGER_RTT_WriteString(0, "\r\n\nBeginning detection:\n");
+		for (int i = 0; i < 100; i++)
+		{
+			if (readMotionMMA8451Q())
+			{
+				SEGGER_RTT_WriteString(0, "\r\n\t** Motion detected **");
+			}
+			OSA_TimeDelay(100);
+		}
+		validChange = true;
+		SEGGER_RTT_WriteString(0, "\r\nDirection (u | d)? >> ");
+		key = SEGGER_RTT_WaitKey();
+		switch (key)
+		{
+			case 'u':
+			{
+				thresholdInc = true;
+				break;
+			}
+			case 'd':
+			{
+				thresholdInc = false;
+				break;
+			}
+			default:
+			{
+				SEGGER_RTT_WriteString(0, "\r\nInvalid");
+				validChange = false;
+			}
+		}
+		if (validChange)
+		{
+			SEGGER_RTT_WriteString(0, "\r\nStep (1-F) >>");
+			key = SEGGER_RTT_WaitKey();
+			switch (key)
+			{
+				case '1': case '2': case '3': case '4': case '5':
+				case '6': case '7': case '8': case '9': case 'A':
+				case 'B': case 'C': case 'D': case 'E': case 'F':
+				{
+					/* Convert hex to int value */
+					thresholdStep = (key > '9') ? (key &~ 0x20) - 'A' + 10 : (key - '0');
+					break;
+				}
+				default:
+				{
+					SEGGER_RTT_WriteString(0, "\r\nInvalid");
+					validChange = false;
+				}
+			}
+		}
+		if (validChange)
+		{
+			if (thresholdInc)
+			{
+				currentThreshold += thresholdStep;
+				SEGGER_RTT_printf(0, "\r\nIncreasing threshold by %d to %d", thresholdStep, currentThreshold);
+			}
+			else
+			{
+				currentThreshold -= thresholdStep;
+				SEGGER_RTT_printf(0, "\r\nDecreasing threshold by %d to %d", thresholdStep, currentThreshold);
+			}
+		}
 	}
 }

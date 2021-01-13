@@ -348,3 +348,4 @@ void		enableSPIpins(void);
 void		disableSPIpins(void);
 
 void runActivityTracker(int i2cPullupValue);
+void tuneThreshold(int i2cPullupValue);
