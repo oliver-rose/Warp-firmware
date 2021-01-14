@@ -1477,6 +1477,8 @@ main(void)
 			 */
 			case '1':
 			{
+				enableSssupply(3000);
+				enableI2Cpins(menuI2cPullupValue);
 				SEGGER_RTT_WriteString(0, "\r\tRunning motion detection:\n\n");
 				runActivityTracker(menuI2cPullupValue);		/* Never returns */
 				break;
