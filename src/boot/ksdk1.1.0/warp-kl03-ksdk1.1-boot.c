@@ -1482,7 +1482,7 @@ main(void)
 			{
 				enableSssupply(3000);
 				enableI2Cpins(menuI2cPullupValue);
-				SEGGER_RTT_WriteString(0, "\r\tRunning motion detection:\n\n");
+				SEGGER_RTT_WriteString(0, "\r\tRunning activity tracker:\n\n");
 				runActivityTracker(menuI2cPullupValue);		/* Never returns */
 				break;
 			}
@@ -3710,9 +3710,9 @@ activateAllLowPowerSensorModes(bool verbose)
 }
 
 
-#define MOTION_COUNTS	25
-#define MOTION_TIME	60
-#define ACTIVE_COUNTS	16
+#define MOTION_COUNTS	20
+#define MOTION_TIME	10
+#define ACTIVE_COUNTS	15
 
 void
 runActivityTracker(int i2cPullupValue)
@@ -3733,7 +3733,7 @@ runActivityTracker(int i2cPullupValue)
 		cycleStartTPR = RTC->TPR;
 		// Get next reading
 		window = (window << 1) + (readMotionMMA8451Q() ? 1 : 0);
-		SEGGER_RTT_printf(0, "%d, %d : %d : ", cycleStart, cycleStartTPR, window);
+		SEGGER_RTT_printf(0, "%d, %d : %u (%d) : ", cycleStart, cycleStartTPR, window, countSetBits(window));
 		switch (state)
 		{
 			case kActivityTrackerStateInit:
