@@ -1,6 +1,8 @@
 /*
 	Authored 2016-2018. Phillip Stanley-Marbell, Youchao Wang.
 
+	Modified 2020. Oliver Rose.
+
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without
@@ -42,7 +44,7 @@
 typedef enum
 {
 	/* Status */
-	kWarpSensorRegisterMMA8451Q_STATUS				= 0x00,
+	kWarpSensorRegisterMMA8451Q_STATUS			= 0x00,
 
 	/* Output registers */
 	kWarpSensorRegisterMMA8451Q_OUT_X_MSB			= 0x01,
@@ -53,11 +55,11 @@ typedef enum
 	kWarpSensorRegisterMMA8451Q_OUT_Z_LSB			= 0x06,
 
 	/* FIFO */
-	kWarpSensorRegisterMMA8451Q_F_SETUP				= 0x09,
+	kWarpSensorRegisterMMA8451Q_F_SETUP			= 0x09,
 	kWarpSensorRegisterMMA8451Q_TRIG_CFG			= 0x0A,
 
 	/* System mode */
-	kWarpSensorRegisterMMA8451Q_SYSMOD 				= 0x0B,
+	kWarpSensorRegisterMMA8451Q_SYSMOD 			= 0x0B,
 	/* Interrupt status */
 	kWarpSensorRegisterMMA8451Q_INT_SOURCE 			= 0x0C,
 
@@ -66,11 +68,11 @@ typedef enum
 
 	/* Configuration registers */
 	kWarpSensorRegisterMMA8451Q_XYZ_DATA_CFG 		= 0x0E,
-	kWarpSensorRegisterMMA8451Q_HP_FILTER_CUTOFF 	= 0x0F,
+	kWarpSensorRegisterMMA8451Q_HP_FILTER_CUTOFF 		= 0x0F,
 
 	/* Portrait/landscape */
 	kWarpSensorRegisterMMA8451Q_PL_STATUS 			= 0x10,
-	kWarpSensorRegisterMMA8451Q_PL_CFG 				= 0x11,
+	kWarpSensorRegisterMMA8451Q_PL_CFG 			= 0x11,
 	kWarpSensorRegisterMMA8451Q_PL_COUNT 			= 0x12,
 	kWarpSensorRegisterMMA8451Q_PL_BF_ZCOMP 		= 0x13,
 	kWarpSensorRegisterMMA8451Q_P_L_THS_REG 		= 0x14,
@@ -108,9 +110,9 @@ typedef enum
 	kWarpSensorRegisterMMA8451Q_CTRL_REG5			= 0x2E,
 
 	/* Offsets */
-	kWarpSensorRegisterMMA8451Q_OFF_X				= 0x2F,
-	kWarpSensorRegisterMMA8451Q_OFF_Y				= 0x30,
-	kWarpSensorRegisterMMA8451Q_OFF_Z				= 0x31,
+	kWarpSensorRegisterMMA8451Q_OFF_X			= 0x2F,
+	kWarpSensorRegisterMMA8451Q_OFF_Y			= 0x30,
+	kWarpSensorRegisterMMA8451Q_OFF_Z			= 0x31,
 } WarpSensorRegisterMMA8451Q;
 
 
