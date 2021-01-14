@@ -88,7 +88,7 @@
 
 
 #define WARP_BUILD_ENABLE_SEGGER_RTT_PRINTF
-#define WARP_BUILD_BOOT_TO_CSVSTREAM
+// #define WARP_BUILD_BOOT_TO_CSVSTREAM
 #define WARP_BUILD_ENABLE_MMA8451Q_MOTION
 #define WARP_BUILD_ENABLE_ACTIVITY_TRACKER
 
@@ -1494,6 +1494,15 @@ main(void)
 				break;
 			}
 
+			case '3':
+			{
+				warpSetLowPowerMode(kWarpPowerModeRUN, 0 /* sleep seconds : irrelevant here */);
+				enableSssupply(3000);
+				enableI2Cpins(menuI2cPullupValue);
+				printAllSensors(true /* printHeadersAndCalibration */, false /* hexModeFlag */, 100 /* menuDelayBetweenEachRun */, menuI2cPullupValue);
+				break;
+			}
+
 			/*
 			 *		Select sensor
 			 */
@@ -2550,7 +2559,7 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 	#ifdef WARP_BUILD_ENABLE_DEVMMA8451Q
 	#ifdef WARP_BUILD_ENABLE_MMA8451Q_MOTION
 	/* Motion detection enabled */
-	numberOfConfigErrors += configureSensorMMA8451Qmotion(i2cPullupValue, 0x15  /* Threshold */);
+	numberOfConfigErrors += configureSensorMMA8451Qmotion(i2cPullupValue, 0x0F  /* Threshold */);
 	#else
 	/* Standard MMA8451Q config */
 	numberOfConfigErrors += configureSensorMMA8451Q(0x00,/* Payload: Disable FIFO */
@@ -3720,7 +3729,7 @@ activateAllLowPowerSensorModes(bool verbose)
 void
 runActivityTracker(int i2cPullupValue)
 {
-	configureSensorMMA8451Qmotion(i2cPullupValue, 0x15  /* Threshold */);
+	configureSensorMMA8451Qmotion(i2cPullupValue, 0x0F  /* Threshold */);
 	/* Run the activity tracking functionality */
 	while (1)
 	{
@@ -3734,7 +3743,7 @@ runActivityTracker(int i2cPullupValue)
 
 void tuneThreshold(int i2cPullupValue)
 {
-	uint8_t currentThreshold = 0x30;
+	uint8_t currentThreshold = 0x0F;
 
 	bool thresholdInc;
 	uint8_t thresholdStep;
