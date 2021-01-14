@@ -153,7 +153,7 @@ configureSensorMMA8451Qmotion(uint16_t menuI2cPullupValue)
 
 	/* Configure the motion detection, threshold and debounce */
 	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_CFG, 0xD8, menuI2cPullupValue);
-	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_THS, 0x15, menuI2cPullupValue);
+	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_THS, 0x0F, menuI2cPullupValue);
 	i2cStatus |= writeSensorRegisterMMA8451Q(kWarpSensorRegisterMMA8451Q_FF_MT_COUNT, 0x0A, menuI2cPullupValue);
 
 	/* Enable the motion detection and route to INT2 pin */
