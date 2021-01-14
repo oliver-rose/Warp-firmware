@@ -3,6 +3,8 @@
 
 	Additional contributions, 2018 onwards: Jan Heck, Chatura Samarakoon, Youchao Wang, Sam Willis.
 
+	Modified 2020. Oliver Rose.
+
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without
@@ -55,6 +57,7 @@
 #include "SEGGER_RTT.h"
 #include "warp.h"
 
+#include "activity_tracker.h"
 
 #define WARP_FRDMKL03
 
@@ -3707,17 +3710,108 @@ activateAllLowPowerSensorModes(bool verbose)
 }
 
 
+#define MOTION_COUNTS	25
+#define MOTION_TIME	60
+#define ACTIVE_COUNTS	16
+
 void
 runActivityTracker(int i2cPullupValue)
 {
 	configureSensorMMA8451Qmotion(i2cPullupValue);
-	/* Run the activity tracking functionality */
+	// Run the activity tracking functionality
+	ActivityTrackerState state = kActivityTrackerStateInit;		// Begin in init state
+	uint32_t window = 0;			// Window
+	uint8_t init = 32;			// Track init period
+	uint32_t endTime = RTC->TSR;		// Initialise the end period time as current time
+	uint32_t cycleStart = RTC->TSR;		// Track the cycle times
+	uint32_t cycleStartTPR = RTC->TPR;
+	uint32_t cycleEnd = RTC->TSR;
+	uint32_t cycleEndTPR = RTC->TPR;
 	while (1)
 	{
-		if (readMotionMMA8451Q())
+		cycleStart = RTC->TSR;
+		cycleStartTPR = RTC->TPR;
+		// Get next reading
+		window = (window << 1) + (readMotionMMA8451Q() ? 1 : 0);
+		SEGGER_RTT_printf(0, "%d, %d : %d : ", cycleStart, cycleStartTPR, window);
+		switch (state)
 		{
-			SEGGER_RTT_WriteString(0, "\r\nMotion detected");
+			case kActivityTrackerStateInit:
+			{
+				SEGGER_RTT_printf(0, "INIT (%d)\n", init);
+				if (init == 0)
+				{
+					// Initialisation complete
+					state = kActivityTrackerStateStill;
+				}
+				else
+				{
+					init -= 1;
+				}
+				break;
+			}
+			case kActivityTrackerStateStill:
+			{
+				SEGGER_RTT_WriteString(0, "STILL\n");
+				if (countSetBits(window) >= MOTION_COUNTS)
+				{
+					// Sufficient motion detected
+					endTime = RTC->TSR + MOTION_TIME;
+					state = kActivityTrackerStateMotion;
+				}
+				break;
+			}
+			case kActivityTrackerStateMotion:
+			{
+				SEGGER_RTT_printf(0, "MOTION (%d)\n", endTime);
+				if (countSetBits(window) < MOTION_COUNTS)
+				{
+					// No longer moving
+					state = kActivityTrackerStateStill;
+				}
+				else
+				{
+					// Still moving
+					if (RTC->TSR >= endTime)
+					{
+						// Time completed
+						state = kActivityTrackerStateActive;
+					}
+				}
+				break;
+			}
+			case kActivityTrackerStateActive:
+			{
+				SEGGER_RTT_WriteString(0, "ACTIVE\n");
+				if (countSetBits(window) < ACTIVE_COUNTS)
+				{
+					// Stopped moving
+					state = kActivityTrackerStateStill;
+				}
+				break;
+			}
 		}
-		OSA_TimeDelay(100);
+		// Maintain a max cycle speed of about 100 ms
+		cycleEnd = cycleStart;
+		cycleEndTPR = cycleEndTPR + 3277;
+		if (cycleEndTPR >= 32768)
+		{
+			cycleEndTPR -= 32768;
+			cycleEnd += 1;
+		}
+		while (RTC->TSR < cycleEnd) {}
+		while (RTC->TPR < cycleEndTPR) {}
 	}
+}
+
+uint8_t
+countSetBits(uint32_t n)
+{
+	// Count the bits in n that are 1
+	uint8_t count = 0; 
+	while (n) { 
+		count += n & 1; 
+		n >>= 1; 
+	} 
+	return count; 
 }

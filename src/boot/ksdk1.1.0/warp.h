@@ -348,3 +348,4 @@ void		enableSPIpins(void);
 void		disableSPIpins(void);
 
 void runActivityTracker(int i2cPullupValue);
+uint8_t countSetBits(uint32_t n);
