@@ -88,7 +88,7 @@
 
 
 #define WARP_BUILD_ENABLE_SEGGER_RTT_PRINTF
-// #define WARP_BUILD_BOOT_TO_CSVSTREAM
+#define WARP_BUILD_BOOT_TO_CSVSTREAM
 #define WARP_BUILD_ENABLE_MMA8451Q_MOTION
 #define WARP_BUILD_ENABLE_ACTIVITY_TRACKER
 
@@ -2550,7 +2550,7 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 	#ifdef WARP_BUILD_ENABLE_DEVMMA8451Q
 	#ifdef WARP_BUILD_ENABLE_MMA8451Q_MOTION
 	/* Motion detection enabled */
-	numberOfConfigErrors += configureSensorMMA8451Qmotion(i2cPullupValue, 0x30  /* Threshold */);
+	numberOfConfigErrors += configureSensorMMA8451Qmotion(i2cPullupValue, 0x15  /* Threshold */);
 	#else
 	/* Standard MMA8451Q config */
 	numberOfConfigErrors += configureSensorMMA8451Q(0x00,/* Payload: Disable FIFO */
@@ -3720,7 +3720,7 @@ activateAllLowPowerSensorModes(bool verbose)
 void
 runActivityTracker(int i2cPullupValue)
 {
-	configureSensorMMA8451Qmotion(i2cPullupValue, 0x030  /* Threshold */);
+	configureSensorMMA8451Qmotion(i2cPullupValue, 0x15  /* Threshold */);
 	/* Run the activity tracking functionality */
 	while (1)
 	{
@@ -3750,12 +3750,16 @@ void tuneThreshold(int i2cPullupValue)
 		{
 			if (readMotionMMA8451Q())
 			{
-				SEGGER_RTT_WriteString(0, "\r\n\t** Motion detected **");
+				SEGGER_RTT_WriteString(0, "*");
+			}
+			else
+			{
+				SEGGER_RTT_WriteString(0, ".");
 			}
 			OSA_TimeDelay(100);
 		}
 		validChange = true;
-		SEGGER_RTT_WriteString(0, "\r\nDirection (u | d)? >> ");
+		SEGGER_RTT_WriteString(0, "\n\r\nDirection (u | d)? >> ");
 		key = SEGGER_RTT_WaitKey();
 		switch (key)
 		{
