@@ -3880,9 +3880,12 @@ runActivityTracker(int i2cPullupValue)
 				// SEGGER_RTT_WriteString(0, "ACTIVE\n");
 				if (RTC->TSR - startBreak + storedBreak > BREAK_LENGTH)
 				{
+					if (!clearBreak)
+					{
+						SEGGER_RTT_WriteString(0, "\n\tBreak completed\n");
+					}
 					// This break is now long enough to clear the reminder
 					// (May include a previously stored break)
-					SEGGER_RTT_WriteString(0, "\n\tBreak completed\n");
 					clearBreak = true;
 				}
 				// Check if the stored break should be dropped yet
@@ -3909,6 +3912,8 @@ runActivityTracker(int i2cPullupValue)
 					{
 						// Enough loops to be declared still again
 						state = kActivityTrackerStateStill;
+						// Set active to ensure there is not a pause here
+						active = 1;
 						// Handle the break (completed or not)
 						if (clearBreak)
 						{
