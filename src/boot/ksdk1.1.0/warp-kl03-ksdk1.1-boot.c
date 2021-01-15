@@ -3743,10 +3743,10 @@ activateAllLowPowerSensorModes(bool verbose)
 
 /*
  * Number of cycles required to be still before going from active to Still.
- *	- This requires that 3 cycles, each 10 seconds apart, must be logged as Still
+ *	- This requires that 2 cycles, 10 seconds apart, must be logged as Still
  *	  before the system will go from Active to Still.
  */
-#define ACTIVE_STILL_CYCLES	3
+#define ACTIVE_STILL_CYCLES	2
 
 /*
  * Time between breaks in seconds.
