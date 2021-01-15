@@ -3710,12 +3710,63 @@ activateAllLowPowerSensorModes(bool verbose)
 }
 
 
-#define MOTION_COUNTS		15	// Number of motion events in window needed to count as Motion
-#define MOTION_TIME		10	// Time required to be in Motion state before moving to Active state
-#define ACTIVE_COUNTS		10	// Number of motion events in window needed in order to maintain Active
+/*
+ * Number of motion events in window needed to count as motion while in Still or Motion states.
+ * 	- This means that 15/32 readings must have the motion detection flag
+ *	  set in order to count as motion while in Still state
+ */
+#define MOTION_COUNTS		15
 
-#define MOTION_STILL_CYCLES	10	// Number of still cycles (100 ms each), out of 32 needed before going from Motion to Still
-#define ACTIVE_STILL_CYCLES	20	// Number of still cycles needed before going from Active to Still
+/*
+ * Length of time required to be in Motion state before moving to Active state.
+ *	- This means there must be at least MOTION_COUNTS activity for 10 seconds
+ *	  before the Active state can be reached.
+ */
+#define MOTION_TIME		10
+
+/*
+ * Number of motion events in window needed to count as motion in Active state.
+ *	- This requires 10/32 readings to have motion to stay in Active state.
+ */
+#define ACTIVE_COUNTS		10
+
+/*
+ * Time required to be still for before Motion state is cancelled.
+ *	- The motion level must be below MOTION_COUNTS for 5 seconds before the
+ *	  system will move back to Still state.
+ */
+#define MOTION_STILL_TIME	5
+
+/*
+ * Number of cycles required to be still before going from active to Still.
+ *	- This requires that 3 cycles, each 10 seconds apart, must be logged as Still
+ *	  before the system will go from Active to Still.
+ */
+#define ACTIVE_STILL_CYCLES	3
+
+/*
+ * Time between breaks in seconds.
+ *	- Would normally be 3600s (1 hr) but is set to 120s for testing and
+ *	  demonstration purposes.
+ */
+#define TIME_BETWEEN_BREAKS	120
+
+/*
+ * The length of break required every TIME_BETWEEN_BREAKS.
+ *	- Would normally be 300s (5 mins) but is set to 30s for testing and
+ *	  demonstration purposes.
+ */
+#define BREAK_LENGTH		30
+
+/*
+ * The time a break can be carried over for.
+ *	- Dictates the gap between short breaks that allows them to be counted
+ *	  together.
+ *	- Only one break can be carried forward.
+ *	- Would normally be 300s (5 mins) but is set to 60s for testing and
+ *	  demonstration purposes.
+ */
+#define STORED_BREAK_TIME	60
 
 void
 runActivityTracker(int i2cPullupValue)
@@ -3724,15 +3775,25 @@ runActivityTracker(int i2cPullupValue)
 	// Run the activity tracking functionality
 	ActivityTrackerState state = kActivityTrackerStateInit;		// Begin in init state
 	uint32_t window = 0;			// Window
-	uint32_t cycles = 0;			// Track still cycles
 	uint8_t init = 32;			// Track init period
-	uint8_t active;				// Used for tracking active testing loops
+	bool motion_to_still = false;		// Track whether moving from Motion to Still (MOTION_STILL_TIME)
+	uint8_t active = 0;			// Used for tracking readings in active cycles
+	uint8_t inactive_cycles = 0;		// Used for tracking inactive testing loops (ACTIVE_STILL_CYCLES)
 
 	uint32_t endTime = RTC->TSR;		// Initialise the end period time as current time
+
 	uint32_t cycleStart = RTC->TSR;		// Track the cycle times
 	uint32_t cycleStartTPR = RTC->TPR;
 	uint32_t cycleEnd = RTC->TSR;
 	uint32_t cycleEndTPR = RTC->TPR;
+
+	uint32_t nextBreak = RTC->TSR + TIME_BETWEEN_BREAKS;	// Initialise the next break time
+	uint32_t startBreak = 0;				// Time of the start of a break
+	uint32_t storedBreak = 0;				// Stores any short break to combine with any within 5 minutes
+	uint32_t storedBreakDropTime = 0;			// The time when the stored break should be dropped
+	bool clearBreak = false;				// Check whether the break has been completed
+
+	uint8_t update = 0;			// Track when to update the display (once a second)
 	while (1)
 	{
 		cycleStart = RTC->TSR;
@@ -3763,23 +3824,32 @@ runActivityTracker(int i2cPullupValue)
 				{
 					// Sufficient motion detected
 					endTime = RTC->TSR + MOTION_TIME;
-					cycles = 0;
+					startBreak = RTC->TSR;		// If this is a break, this is the start point
+					motion_to_still = false;
 					state = kActivityTrackerStateMotion;
 				}
 				break;
 			}
 			case kActivityTrackerStateMotion:
 			{
-				cycles <<= 1;
 				SEGGER_RTT_printf(0, "MOTION (%d)\n", endTime);
 				if (countSetBits(window) < MOTION_COUNTS)
 				{
 					// Motion not present
-					cycles += 1;
-					if (countSetBits(cycles) > MOTION_STILL_CYCLES)
+					if (motion_to_still)
 					{
-						// No longer moving
-						state = kActivityTrackerStateStill;
+						// Not the first loop with no motion
+						if (RTC->TSR > endTime)
+						{
+							// Still time completed
+							state = kActivityTrackerStateStill;
+						}
+					}
+					else
+					{
+						// First with no motion
+						motion_to_still = true;
+						endTime = RTC->TSR + MOTION_STILL_TIME;
 					}
 				}
 				else
@@ -3788,8 +3858,8 @@ runActivityTracker(int i2cPullupValue)
 					if (RTC->TSR >= endTime)
 					{
 						// Time completed
-						cycles = 0;
 						active = 0;
+						inactive_cycles = 0;
 						state = kActivityTrackerStateActive;
 					}
 				}
@@ -3797,19 +3867,55 @@ runActivityTracker(int i2cPullupValue)
 			}
 			case kActivityTrackerStateActive:
 			{
-				cycles <<= 1;
 				SEGGER_RTT_WriteString(0, "ACTIVE\n");
+				if (RTC->TSR - startBreak + storedBreak > BREAK_LENGTH)
+				{
+					// This break is now long enough to clear the reminder
+					// (May include a previously stored break)
+					clearBreak = true;
+				}
+				// Check if the stored break should be dropped yet
+				if (storedBreak != 0)
+				{
+					// There is a break stored
+					if (RTC->TSR > storedBreakDropTime)
+					{
+						// Should be dropped
+						storedBreak = 0;
+					}
+				}
+				// Check if Active state should be maintained
 				if (countSetBits(window) < ACTIVE_COUNTS)
 				{
 					// Motion not present
-					cycles += 1;
-					if (countSetBits(cycles) > ACTIVE_STILL_CYCLES)
+					if (active == 0)
 					{
-						// Stopped moving
+						// Only add to counter at end of ~3s run
+						// This means the user was still for that 3s run
+						inactive_cycles++;
+					}
+					if (inactive_cycles >= ACTIVE_STILL_CYCLES)
+					{
+						// Enough loops to be declared still again
 						state = kActivityTrackerStateStill;
+						// Handle the break (completed or not)
+						if (clearBreak)
+						{
+							// Break of sufficient length so advance the reminder
+							nextBreak = RTC->TSR + TIME_BETWEEN_BREAKS;
+							clearBreak = false;
+							// Also drop any stored break
+							storedBreak = 0;
+						}
+						else
+						{
+							// Not long enough so store the break
+							storedBreak = RTC->TSR - startBreak;
+							storedBreakDropTime = RTC->TSR + STORED_BREAK_TIME;
+						}
 					}
 				}
-				// Run for ~3 seconds then pause for 10 seconds before checking again
+				// Active loop runs for ~3 seconds then pauses for 10 seconds before checking again
 				if (active == 0)
 				{
 					// Pause for 10 seconds
