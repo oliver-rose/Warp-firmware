@@ -3710,9 +3710,12 @@ activateAllLowPowerSensorModes(bool verbose)
 }
 
 
-#define MOTION_COUNTS	20
-#define MOTION_TIME	10
-#define ACTIVE_COUNTS	15
+#define MOTION_COUNTS		15	// Number of motion events in window needed to count as Motion
+#define MOTION_TIME		10	// Time required to be in Motion state before moving to Active state
+#define ACTIVE_COUNTS		10	// Number of motion events in window needed in order to maintain Active
+
+#define MOTION_STILL_CYCLES	10	// Number of still cycles (100 ms each), out of 32 needed before going from Motion to Still
+#define ACTIVE_STILL_CYCLES	20	// Number of still cycles needed before going from Active to Still
 
 void
 runActivityTracker(int i2cPullupValue)
@@ -3721,7 +3724,10 @@ runActivityTracker(int i2cPullupValue)
 	// Run the activity tracking functionality
 	ActivityTrackerState state = kActivityTrackerStateInit;		// Begin in init state
 	uint32_t window = 0;			// Window
+	uint32_t cycles = 0;			// Track still cycles
 	uint8_t init = 32;			// Track init period
+	uint8_t active;				// Used for tracking active testing loops
+
 	uint32_t endTime = RTC->TSR;		// Initialise the end period time as current time
 	uint32_t cycleStart = RTC->TSR;		// Track the cycle times
 	uint32_t cycleStartTPR = RTC->TPR;
@@ -3757,17 +3763,24 @@ runActivityTracker(int i2cPullupValue)
 				{
 					// Sufficient motion detected
 					endTime = RTC->TSR + MOTION_TIME;
+					cycles = 0;
 					state = kActivityTrackerStateMotion;
 				}
 				break;
 			}
 			case kActivityTrackerStateMotion:
 			{
+				cycles <<= 1;
 				SEGGER_RTT_printf(0, "MOTION (%d)\n", endTime);
 				if (countSetBits(window) < MOTION_COUNTS)
 				{
-					// No longer moving
-					state = kActivityTrackerStateStill;
+					// Motion not present
+					cycles += 1;
+					if (countSetBits(cycles) > MOTION_STILL_CYCLES)
+					{
+						// No longer moving
+						state = kActivityTrackerStateStill;
+					}
 				}
 				else
 				{
@@ -3775,6 +3788,8 @@ runActivityTracker(int i2cPullupValue)
 					if (RTC->TSR >= endTime)
 					{
 						// Time completed
+						cycles = 0;
+						active = 0;
 						state = kActivityTrackerStateActive;
 					}
 				}
@@ -3782,11 +3797,29 @@ runActivityTracker(int i2cPullupValue)
 			}
 			case kActivityTrackerStateActive:
 			{
+				cycles <<= 1;
 				SEGGER_RTT_WriteString(0, "ACTIVE\n");
 				if (countSetBits(window) < ACTIVE_COUNTS)
 				{
-					// Stopped moving
-					state = kActivityTrackerStateStill;
+					// Motion not present
+					cycles += 1;
+					if (countSetBits(cycles) > ACTIVE_STILL_CYCLES)
+					{
+						// Stopped moving
+						state = kActivityTrackerStateStill;
+					}
+				}
+				// Run for ~3 seconds then pause for 10 seconds before checking again
+				if (active == 0)
+				{
+					// Pause for 10 seconds
+					endTime = RTC->TSR + 10;
+					while (RTC->TSR < endTime) {}
+					active = 32;
+				}
+				else
+				{
+					active--;
 				}
 				break;
 			}
