@@ -1362,7 +1362,6 @@ main(void)
 
 	// Init the SSD1331 display
 	devSSD1331init();
-	SEGGER_RTT_WriteString(0, "Back in main loop");
 
 	while (1)
 	{
@@ -3934,6 +3933,55 @@ runActivityTracker(int i2cPullupValue)
 				}
 				break;
 			}
+		}
+		// Update the display every 2 cycles (200 ms)
+		if (update == 0)
+		{
+			update = 2;
+			switch (state)
+			{
+				case kActivityTrackerStateInit:
+				{
+					// Show white
+					devSSD1331colour(0x3F, 0x3F, 0x3F);
+					break;
+				}
+				case kActivityTrackerStateStill:
+				{
+					if (RTC->TSR > nextBreak)
+					{
+						// Time for a break so make the screen red
+						devSSD1331colour(0x3F, 0x00, 0x00);
+					}
+					else
+					{
+						// Blank the screen when still
+						devSSD1331clear();
+					}
+					break;
+				}
+				case kActivityTrackerStateMotion:
+				{
+					// Show blue while moving
+					devSSD1331colour(0x00, 0x00, 0x3F);
+					break;
+				}
+				case kActivityTrackerStateActive:
+				{
+					// Show blue while active
+					devSSD1331colour(0x00, 0x3F, 0x00);
+					if (clearBreak)
+					{
+						// Add red square if break cleared
+						devSSD1331rect(0x3F, 0x00, 0x00);
+					}
+					break;
+				}
+			}
+		}
+		else
+		{
+			update--;
 		}
 		// Maintain a max cycle speed of about 100 ms
 		cycleEnd = cycleStart;
