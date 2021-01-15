@@ -3743,7 +3743,7 @@ activateAllLowPowerSensorModes(bool verbose)
 
 /*
  * Number of cycles required to be still before going from active to Still.
- *	- This requires that 2 cycles, 10 seconds apart, must be logged as Still
+ *	- This requires that 2 cycles, 2 seconds apart, must be logged as Still
  *	  before the system will go from Active to Still.
  */
 #define ACTIVE_STILL_CYCLES	2
@@ -3787,11 +3787,13 @@ runActivityTracker(int i2cPullupValue)
 	uint32_t endTime = RTC->TSR;		// Initialise the end period time as current time
 
 	uint32_t cycleStart = RTC->TSR;		// Track the cycle times
-	uint32_t cycleStartTPR = RTC->TPR;
+	// uint32_t cycleStartTPR = RTC->TPR;
 	uint32_t cycleEnd = RTC->TSR;
 	uint32_t cycleEndTPR = RTC->TPR;
 
 	uint32_t nextBreak = RTC->TSR + TIME_BETWEEN_BREAKS;	// Initialise the next break time
+	SEGGER_RTT_printf(0, "\n\tFirst break due at %d\n", nextBreak);
+
 	uint32_t startBreak = 0;				// Time of the start of a break
 	uint32_t storedBreak = 0;				// Stores any short break to combine with any within 5 minutes
 	uint32_t storedBreakDropTime = 0;			// The time when the stored break should be dropped
@@ -3801,15 +3803,16 @@ runActivityTracker(int i2cPullupValue)
 	while (1)
 	{
 		cycleStart = RTC->TSR;
-		cycleStartTPR = RTC->TPR;
+		// cycleStartTPR = RTC->TPR;
+		SEGGER_RTT_printf(0, "\rCurrent time: %d", cycleStart);
 		// Get next reading
 		window = (window << 1) + (readMotionMMA8451Q() ? 1 : 0);
-		SEGGER_RTT_printf(0, "%d, %d : %u (%d) : ", cycleStart, cycleStartTPR, window, countSetBits(window));
+		// SEGGER_RTT_printf(0, "%d, %d : %u (%d) : ", cycleStart, cycleStartTPR, window, countSetBits(window));
 		switch (state)
 		{
 			case kActivityTrackerStateInit:
 			{
-				SEGGER_RTT_printf(0, "INIT (%d)\n", init);
+				// SEGGER_RTT_printf(0, "INIT (%d)\n", init);
 				if (init == 0)
 				{
 					// Initialisation complete
@@ -3823,12 +3826,13 @@ runActivityTracker(int i2cPullupValue)
 			}
 			case kActivityTrackerStateStill:
 			{
-				SEGGER_RTT_WriteString(0, "STILL\n");
+				// SEGGER_RTT_WriteString(0, "STILL\n");
 				if (countSetBits(window) >= MOTION_COUNTS)
 				{
 					// Sufficient motion detected
 					endTime = RTC->TSR + MOTION_TIME;
 					startBreak = RTC->TSR;		// If this is a break, this is the start point
+					SEGGER_RTT_printf(0, "\n\tMotion begun at: %d\n", startBreak);
 					motion_to_still = false;
 					state = kActivityTrackerStateMotion;
 				}
@@ -3836,7 +3840,7 @@ runActivityTracker(int i2cPullupValue)
 			}
 			case kActivityTrackerStateMotion:
 			{
-				SEGGER_RTT_printf(0, "MOTION (%d)\n", endTime);
+				// SEGGER_RTT_printf(0, "MOTION (%d)\n", endTime);
 				if (countSetBits(window) < MOTION_COUNTS)
 				{
 					// Motion not present
@@ -3846,6 +3850,7 @@ runActivityTracker(int i2cPullupValue)
 						if (RTC->TSR > endTime)
 						{
 							// Still time completed
+							SEGGER_RTT_WriteString(0, "\n\tReturning to Still state from Motion\n");
 							state = kActivityTrackerStateStill;
 						}
 					}
@@ -3862,6 +3867,7 @@ runActivityTracker(int i2cPullupValue)
 					if (RTC->TSR >= endTime)
 					{
 						// Time completed
+						SEGGER_RTT_WriteString(0, "\n\tBreak detected\n");
 						active = 0;
 						inactive_cycles = 0;
 						state = kActivityTrackerStateActive;
@@ -3871,11 +3877,12 @@ runActivityTracker(int i2cPullupValue)
 			}
 			case kActivityTrackerStateActive:
 			{
-				SEGGER_RTT_WriteString(0, "ACTIVE\n");
+				// SEGGER_RTT_WriteString(0, "ACTIVE\n");
 				if (RTC->TSR - startBreak + storedBreak > BREAK_LENGTH)
 				{
 					// This break is now long enough to clear the reminder
 					// (May include a previously stored break)
+					SEGGER_RTT_WriteString(0, "\n\tBreak completed\n");
 					clearBreak = true;
 				}
 				// Check if the stored break should be dropped yet
@@ -3910,20 +3917,23 @@ runActivityTracker(int i2cPullupValue)
 							clearBreak = false;
 							// Also drop any stored break
 							storedBreak = 0;
+							SEGGER_RTT_printf(0, "\n\tBreak stopped. Next break at: %d\n", nextBreak);
 						}
 						else
 						{
 							// Not long enough so store the break
 							storedBreak = RTC->TSR - startBreak;
 							storedBreakDropTime = RTC->TSR + STORED_BREAK_TIME;
+							SEGGER_RTT_WriteString(0, "\n\tBreak stopped. Insufficient length\n");
 						}
 					}
 				}
-				// Active loop runs for ~3 seconds then pauses for 10 seconds before checking again
+				// Active loop runs for ~3 seconds then pauses for 2 seconds before checking again
+				// This pause is kept short for demonstration purposes
 				if (active == 0)
 				{
-					// Pause for 10 seconds
-					endTime = RTC->TSR + 10;
+					// Pause for 2 seconds
+					endTime = RTC->TSR + 5;
 					while (RTC->TSR < endTime) {}
 					active = 32;
 				}
